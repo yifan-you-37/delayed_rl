@@ -1,0 +1,4 @@
+exp*
+.vscode/
+__pycache__/
+FrozenLake-v0/
