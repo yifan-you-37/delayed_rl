@@ -19,13 +19,13 @@ class Q_UCB(object):
 		self.num_state = num_state
 		self.num_action = num_action
 
-		self.Q = np.zeros(16 * 4).reshape(16, 4).astype(np.float32)
+		self.Q = np.zeros(num_state * 4).reshape(num_state, 4).astype(np.float32)
 		self.N = defaultdict(lambda: np.zeros(self.num_action))
 
 		self.gamma = gamma
 		self.delta = delta
 		self.total_it = 0
-		self.log_freq = 5000
+		self.log_freq = 10000
 	def select_action(self, state, test=False):
 		if test is False:
 			epsilon = 0.1
@@ -43,8 +43,13 @@ class Q_UCB(object):
 	def alpha_k(self, k):
 		# return 1. / k
 		return 0.1
-		
+
+	def reset_for_new_episode(self):
+		return
+
 	def train(self, state, action, reward, next_state, replay_buffer=None, writer=None):
+		if reward is None:
+			return
 		self.total_it += 1
 		log_it = (self.total_it % self.log_freq == 0)
 		alpha = 0.1

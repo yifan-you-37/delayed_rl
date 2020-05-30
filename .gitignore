@@ -2,3 +2,4 @@ exp*
 .vscode/
 __pycache__/
 FrozenLake-v0/
+parse_results/

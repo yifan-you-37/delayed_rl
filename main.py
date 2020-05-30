@@ -3,11 +3,14 @@ import torch
 import gym
 import argparse
 import os
-
 import datetime
 
 from torch.utils.tensorboard import SummaryWriter
 
+ENV_LEN = {
+	'FrozenLake-v0': 100,
+	'FrozenLake8x8-v0': 400,
+}
 
 # Runs policy for X episodes and returns average reward
 # A fixed seed is used for the eval environment
@@ -19,7 +22,7 @@ def eval_policy(policy, env_name, seed, eval_episodes=10):
 	for _ in range(eval_episodes):
 		state, done = eval_env.reset(), False
 		# while not done:
-		for _ in range(100):
+		for _ in range(ENV_LEN[env_name]):
 			action = policy.select_action(np.array(state), test=True)
 			state, reward, done, _ = eval_env.step(action)
 			avg_reward += reward
@@ -38,15 +41,16 @@ if __name__ == "__main__":
 	parser.add_argument("--policy", default="Q_UCB")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--env", default="FrozenLake-v0")          # OpenAI gym environment name
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
+	parser.add_argument("--delay", default=1, type=int)       
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=3e6, type=int)   # Max time steps to run environment
+	parser.add_argument("--max_timesteps", default=1e7, type=int)   # Max time steps to run environment
 	parser.add_argument("--gamma", default=0.99)                 # Discount factor
 	parser.add_argument("--epsilon", default=0.1)             
 	parser.add_argument("--delta", default=0.1)                
 
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--comment", default="")
-	parser.add_argument("--exp_name", default="exp_ant")
+	parser.add_argument("--exp_name", default="exp_May_29")
 	parser.add_argument("--which_cuda", default=0, type=int)
 
 	args = parser.parse_args()
@@ -54,7 +58,7 @@ if __name__ == "__main__":
 	device = torch.device('cuda:{}'.format(args.which_cuda))
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-	file_name = "{}_{}_{}".format(args.policy, args.env, args.seed)
+	file_name = "{}_{}_{}_d_{}".format(args.policy, args.env, args.seed, args.delay)
 	file_name += "_{}".format(args.comment) if args.comment != "" else ""
 	folder_name = datetime.datetime.now().strftime('%b%d_%H-%M-%S_') + file_name
 	result_folder = 'runs/{}'.format(folder_name) 
@@ -97,6 +101,7 @@ if __name__ == "__main__":
 	episode_reward = 0
 	episode_timesteps = 0
 	episode_num = 0
+	reward_queue = []
 
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
 
@@ -111,23 +116,22 @@ if __name__ == "__main__":
 
 		# Select action randomly or according to policy
 		action = policy.select_action(np.array(state))
-		# action = env.action_space.sample()
+
 		# Perform action
 		next_state, reward, done, _ = env.step(action) 
 		# writer.add_scalar('test/reward', reward, t+1)
-		done_bool = float(done) if episode_timesteps < env._max_episode_steps else 0
 
-		# Store data in replay buffer
-		# replay_buffer.add(state, action, next_state, reward, done_bool)
+		reward_queue.append(reward)
+
 		# Train agent after collecting sufficient data
-		policy.train(state, action, reward, next_state, writer=writer)
+		if episode_timesteps <= args.delay:
+			policy.train(state, action, None, next_state, writer=writer)
+		else:
+			policy.train(state, action, reward_queue.pop(0), next_state, writer=writer)
 
 		state = next_state
 		episode_reward += reward
-
-
-
-		if episode_timesteps >= 100: 
+		if episode_timesteps >= ENV_LEN[args.env]: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
 			# print("Total T: {} Episode Num: {} Episode T: {} Reward: {:.3f}".format(t+1, episode_num+1, episode_timesteps, episode_reward))
 			# Reset environment
@@ -135,6 +139,8 @@ if __name__ == "__main__":
 			episode_reward = 0
 			episode_timesteps = 0
 			episode_num += 1 
+			reward_queue = []
+			policy.reset_for_new_episode()
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
