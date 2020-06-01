@@ -58,7 +58,8 @@ class Q_UCB(object):
 		
 		# b = self.c2 / (1 - self.gamma) * np.sqrt(self.H * self.small_L(k) / k)
 		
-		const_mult = 4
+		const_mult = 30
+		max_reward = 0.8
 		# this constant needs to be tuned manually for each environment, for each reward delay.
 		"""
 		Constants used:
@@ -74,13 +75,13 @@ class Q_UCB(object):
 		next_V_hat = np.max(self.Q_hat[int(next_state)])
 
 		alpha = self.alpha_k(k)
-		self.Q[int(state)][action] = (1 - alpha) * self.Q[int(state)][action] + alpha * (1 + b + self.gamma * next_V_hat)
+		self.Q[int(state)][action] = (1 - alpha) * self.Q[int(state)][action] + alpha * (max_reward + b + self.gamma * next_V_hat)
 		self.queue.append((state, action, k))
 
 		if reward is not None:
 			old_state, old_action, old_k = self.queue.pop(0)
 			old_alpha = self.alpha_k(old_k)
-			self.Q[int(old_state)][old_action] = self.Q[int(old_state)][old_action] - old_alpha * (1 - reward)
+			self.Q[int(old_state)][old_action] = self.Q[int(old_state)][old_action] - old_alpha * (max_reward - reward)
 
 		self.Q_hat[int(state)][action] = min(self.Q_hat[int(state)][action], self.Q[int(state)][action])
 		if log_it:

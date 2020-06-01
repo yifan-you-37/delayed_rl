@@ -43,14 +43,14 @@ if __name__ == "__main__":
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--delay", default=1, type=int)       
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=1e7, type=int)   # Max time steps to run environment
+	parser.add_argument("--max_timesteps", default=2e7, type=int)   # Max time steps to run environment
 	parser.add_argument("--gamma", default=0.99)                 # Discount factor
 	parser.add_argument("--epsilon", default=0.1)             
 	parser.add_argument("--delta", default=0.1)                
 
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--comment", default="")
-	parser.add_argument("--exp_name", default="exp_May_29")
+	parser.add_argument("--exp_name", default="exp_May_31")
 	parser.add_argument("--which_cuda", default=0, type=int)
 
 	args = parser.parse_args()
