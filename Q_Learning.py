@@ -19,7 +19,7 @@ class Q_UCB(object):
 		self.num_state = num_state
 		self.num_action = num_action
 
-		self.Q = np.zeros(num_state * 4).reshape(num_state, 4).astype(np.float32)
+		self.Q = 5 * np.ones(num_state * 4).reshape(num_state, 4).astype(np.float32)
 		self.N = defaultdict(lambda: np.zeros(self.num_action))
 
 		self.gamma = gamma
@@ -28,7 +28,7 @@ class Q_UCB(object):
 		self.log_freq = 10000
 	def select_action(self, state, test=False):
 		if test is False:
-			epsilon = 0.1
+			epsilon = 0.001
 			action_probabilities = np.ones(self.num_action, dtype = float) * epsilon / self.num_action  
 			best_action = np.argmax(self.Q[int(state)]) 
 			action_probabilities[best_action] += (1.0 - epsilon) 
@@ -52,7 +52,7 @@ class Q_UCB(object):
 			return
 		self.total_it += 1
 		log_it = (self.total_it % self.log_freq == 0)
-		alpha = 0.1
+		alpha = 0.01
 		self.Q[int(state)][action] = (1 - alpha) * self.Q[int(state)][action] + alpha * (reward + self.gamma * np.max(self.Q[int(next_state)]))
 
 		if log_it:

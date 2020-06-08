@@ -14,9 +14,9 @@ ENV_LEN = {
 
 # Runs policy for X episodes and returns average reward
 # A fixed seed is used for the eval environment
-def eval_policy(policy, env_name, seed, eval_episodes=10):
+def eval_policy(policy, env_name, seed, it, eval_episodes=10):
 	eval_env = gym.make(env_name)
-	eval_env.seed(seed + 100)
+	eval_env.seed(seed + it * 29)
 
 	avg_reward = 0.
 	for _ in range(eval_episodes):
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--comment", default="")
-	parser.add_argument("--exp_name", default="exp_May_31")
+	parser.add_argument("--exp_name", default="exp_Jun_8")
 	parser.add_argument("--which_cuda", default=0, type=int)
 
 	args = parser.parse_args()
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 	# replay_buffer = utils.ReplayBufferTorch(state_dim, action_dim, device=device)
 
 	# Evaluate untrained policy
-	evaluations = [eval_policy(policy, args.env, args.seed)]
+	evaluations = [eval_policy(policy, args.env, 0, args.seed)]
 
 	state, done = env.reset(), False
 	episode_reward = 0
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
-			evaluation = eval_policy(policy, args.env, args.seed)
+			evaluation = eval_policy(policy, args.env, t, args.seed)
 			evaluations.append(evaluation)
 			writer.add_scalar('test/avg_return', evaluation, t+1)
 			np.save("{}/evaluations".format(result_folder), evaluations)
